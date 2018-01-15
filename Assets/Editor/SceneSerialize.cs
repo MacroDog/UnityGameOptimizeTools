@@ -10,23 +10,23 @@ public class SceneSerialize : Editor {
 
     [MenuItem("XYFOptimizeTools/SaveScene")]
      static void saveScene() {
-        GameObject scense = GameObject.Find("sceneMap");
+        GameObject scene = GameObject.Find("scene");
         XmlDocument xmlDocument= new XmlDocument();
         XmlElement xmlElm= xmlDocument.CreateElement("Scene");
         xmlElm.SetAttribute("Name", SceneManager.GetActiveScene().name);
-        if (scense!=null) {
-            for (int i = 0; i < scense.transform.childCount; i++) {
-                Transform child = scense.transform.GetChild(i);
-               // getChildAndRecord(child);
+        GameObject[] childs = scene.GetComponentsInChildren<GameObject>();
+        for (int i = 0; i < childs.Length;i++)
+        {
+            XmlElement gameObject = xmlDocument.CreateElement("gameObject");
+            if (PrefabUtility.GetPrefabType(childs[i]) == PrefabType.PrefabInstance)  //prefab文件从resources文件夹中加载
+            {
+                gameObject.SetAttribute("name", childs[i].name);
+                gameObject.SetAttribute("assetPass", AssetDatabase.GetAssetPath(childs[i]).Split("Resoutces")[1]);
+                gameObject.SetAttribute("Position", childs[i].transform.position.x + "|" + childs[i].transform.position.y + "|"+childs[i].transform.position.z);
+                gameObject.SetAttribute("Rotation", childs[i].transform.localRotation.x + "|" + childs[i].transform.localRotation.y + "|" + childs[i].transform.rotation.z);
+                gameObject.SetAttribute("Scale", childs[i].transform.localScale.x + "|" + childs[i].transform.localScale.y + "|" + childs[i].transform.localScale.z);
+
             }
         }
-    }
-
-    /// <summary>
-    /// 序列化
-    /// </summary>
-    /// <param name="parent"></param>
-    public static void  getChildAndRecord( XmlDocument xml,Transform parent) {
-      //  XmlElement xmlelement = xmld
     }
 }

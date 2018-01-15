@@ -3,41 +3,51 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using System.IO;
-
-public class MaterialFiltration : Editor {
-    static string path = ""; 
-[MenuItem("XYFOptimizeTools/Genery")]
-    static void FiltratiionMaterial()
+using UnityEngine;
+using UnityEditor.SceneManagement;
+public class MaterialFiltration : Editor
+{
+    [MenuItem(("XYFOptimizeTools/GenerateMaterial"))]
+    public static void filtration()
     {
-        Dictionary<string, string> dicMatrial = new Dictionary<string, string>();
-        MeshRenderer[] meshRenderers = Resources.FindObjectsOfTypeAll<MeshRenderer>();
+        Dictionary<string, string> dicMaterial = new Dictionary<string, string>();
+        MeshRenderer[] meshRenders = Resources.FindObjectsOfTypeAll<MeshRenderer>();
         string rootPath = Directory.GetCurrentDirectory();
-        for (int i = 0; i < meshRenderers.Length; i++)
+        for (int i = 0; i < meshRenders.Length; i++)
         {
-            MeshRenderer meshrender = meshRenderers[i];
-            Material[] newMatirals = new Material[meshrender.sharedMaterials.Length];
-            for (int j = 0; j < meshrender.sharedMaterials.Length; j++)
+            MeshRenderer meshRender = meshRenders[i];
+            EditorUtility.DisplayProgressBar("遍历mesh render中", meshRenders[i].name, (float)i / meshRenders.Length);
+            Material[] newMaterials = new Material[meshRender.sharedMaterials.Length];
+            for (int j = 0; j < newMaterials.Length; j++)
             {
-                Material m = meshrender.sharedMaterials[j];
+                Material m = meshRender.sharedMaterials[j];
                 string mPath = AssetDatabase.GetAssetPath(m);
-                if (!string.IsNullOrEmpty(mPath)&&mPath.Contains("Asset/"))
+                string fullPath = Path.Combine(rootPath, mPath);
+                if (!string.IsNullOrEmpty(mPath) && mPath.Contains("Assets/"))
                 {
+                    string text = File.ReadAllText(fullPath).Replace("m_Name: " + m.name, "");
+                    string change;
+                    if (!dicMaterial.TryGetValue(text, out change))
+                    {
+                        dicMaterial[text] = mPath;
+                        change = mPath;
+                    }
+                    else
+                    {
+                        if (mPath != change)
+                        {
+                            Debug.Log(mPath + " " + change);
+                            AssetDatabase.DeleteAsset(mPath);//删除重复的材质
+                        }
+                    }
+                    newMaterials[j] = AssetDatabase.LoadAssetAtPath<Material>(change);
+
 
                 }
             }
+            meshRender.sharedMaterials = newMaterials;
         }
-    }
-    static bool Compare(Material m1 ,Material m2)
-    {
-        EditorSettings.serializationMode = SerializationMode.ForceText;
-        string m1path = AssetDatabase.GetAssetPath(m1);
-        string m2path = AssetDatabase.GetAssetPath(m2);
-        if (!string .IsNullOrEmpty(m1path)&&!string.IsNullOrEmpty(m2path))
-        {
-            string rootPath = Directory.GetCurrentDirectory();
-            string text1 = File.ReadAllText(m1path).Replace("m_Name:" + m1.name, "");
-            string text2 = File.ReadAllText(m2path).Replace("m_Name:" + m2.name, "");
-            return (text1 == text2);
-        }
+        EditorUtility.ClearProgressBar();
+        EditorSceneManager.MarkAllScenesDirty();
     }
 }
