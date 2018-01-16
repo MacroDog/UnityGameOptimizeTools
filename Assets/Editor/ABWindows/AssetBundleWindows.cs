@@ -12,7 +12,7 @@ public class AssetBundleWindows : EditorWindow {
     private SerializedProperty _toBuildComProperty;
     private SerializedProperty _toBuildNoComProperty;
     private Vector2 scrollPos;
-    private const string AB_BUILD_OUTPUT_DIR = "/../BuildAB/";
+    private const string AB_BUILD_OUTPUT_DIR = "/BuildAB/";
     public static string FullAbBuildOutPutDir {
         get {
             string ret = Application.dataPath + AB_BUILD_OUTPUT_DIR + EditorUserBuildSettings.activeBuildTarget + "/";
@@ -50,32 +50,31 @@ public class AssetBundleWindows : EditorWindow {
         {
             for (int i = 0; i < ToBuildCommpressed.Length; i++)
             {
-                if (EditorUtility.DisplayCancelableProgressBar("遍历mesh render中", ToBuildCommpressed[i].name, (float)i / ToBuildCommpressed.Length)) {
-                    bool result = BuildABCom(ToBuildCommpressed[i], true);
-                    if (!result) {
-                        EditorUtility.DisplayDialog("error", "构建出错" + ToBuildCommpressed[i].name, "ok");
-                        return;
-                    }
-                }
-                else {
-                   EditorUtility.ClearProgressBar(); 
+                EditorUtility.DisplayProgressBar("object", ToBuildCommpressed[i].name, (float)i / ToBuildCommpressed.Length);
+
+                Debug.Log("show");
+                bool result = BuildABCom(ToBuildCommpressed[i], true);
+                if (!result)
+                {
+                    EditorUtility.DisplayDialog("error", "构建出错" + ToBuildCommpressed[i].name, "ok");
+                    return;
                 }
             }
             for (int i = 0; i < ToBuildNoCompressed.Length; i++)
             {
-                if (EditorUtility.DisplayCancelableProgressBar("遍历mesh render中", ToBuildNoCompressed[i].name, (float)i / ToBuildNoCompressed.Length))
-                {
-                    bool result = BuildABCom(ToBuildNoCompressed[i], true);
+
+                EditorUtility.DisplayProgressBar("object", ToBuildNoCompressed[i].name, (float)i / ToBuildNoCompressed.Length);
+                
+                    Debug.Log("show");
+                    bool result = BuildABCom(ToBuildNoCompressed[i], false);
                     if (!result)
                     {
                         EditorUtility.DisplayDialog("error", "构建出错" + ToBuildNoCompressed[i].name, "ok");
                         return;
                     }
-                }
-                else {
-                    EditorUtility.ClearProgressBar();
-                }
+                
             }
+            EditorUtility.ClearProgressBar();
             if (!Directory.Exists(FullAbBuildOutPutDir))
             {
                 Directory.CreateDirectory(FullAbBuildOutPutDir);
@@ -95,13 +94,14 @@ public class AssetBundleWindows : EditorWindow {
     /// <returns></returns>
     private bool BuildABCom(Object obj,bool isCom)
     {
+        Debug.Log("Build");
         AssetBundleBuild b1 = new AssetBundleBuild()
         {
             assetBundleName = GetBundleName(obj),
             assetNames = new string[] { AssetDatabase.GetAssetPath(obj) },
         };
-        var bo = isCom ? BuildAssetBundleOptions.CompleteAssets : BuildAssetBundleOptions.None;
-        var manifest = BuildPipeline.BuildAssetBundles(FullAbBuildOutPutDir, bo,EditorUserBuildSettings.activeBuildTarget);
+        var bo = isCom ?  BuildAssetBundleOptions.ForceRebuildAssetBundle:BuildAssetBundleOptions.UncompressedAssetBundle;
+        var manifest = BuildPipeline.BuildAssetBundles(FullAbBuildOutPutDir, new AssetBundleBuild[] { b1 }, BuildAssetBundleOptions.None,EditorUserBuildSettings.activeBuildTarget);
         if (manifest != null) {
             var path = FullAbBuildOutPutDir + b1.assetBundleName.ToLower();
             if (File.Exists(path)) {
@@ -110,7 +110,7 @@ public class AssetBundleWindows : EditorWindow {
                     File.Delete(tPath);
                 }
                 Debug.Log(path);
-                File.Move(path,tPath);//Unity会自动转为小写
+               // File.Move(path,tPath);//Unity会自动转为小写
                 return true;
             }
         }
@@ -119,22 +119,7 @@ public class AssetBundleWindows : EditorWindow {
     private static string GetBundleName(Object obj)
     {
         var path = AssetDatabase.GetAssetPath(obj);
-        string dir = path;
-        for (int i = 0; i < 100; i++)
-        {
-            dir = Path.GetDirectoryName(dir);
-            if (dir == null)
-            {
-                break;
-            }
-            if (dir == Path.GetPathRoot(dir))
-            {
-                return Path.GetFullPath(path);
-            }
-        }
-        dir += "/";
-        var fileName = path.Remove(0, dir.Length);
-        fileName = fileName.Replace("/", "|");//这个是为了不同平台做的改动
+       var fileName = path.Replace("/", "!");//这个是为了不同平台做的改动
         return fileName;
     }
 }
