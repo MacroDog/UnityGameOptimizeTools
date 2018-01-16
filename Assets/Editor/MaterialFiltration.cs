@@ -16,7 +16,7 @@ public class MaterialFiltration : Editor
         for (int i = 0; i < meshRenders.Length; i++)
         {
             MeshRenderer meshRender = meshRenders[i];
-            EditorUtility.DisplayProgressBar("遍历mesh render中", meshRenders[i].name, (float)i / meshRenders.Length);
+            EditorUtility.DisplayProgressBar("遍历mesh render", meshRenders[i].name, (float)i / meshRenders.Length);
             Material[] newMaterials = new Material[meshRender.sharedMaterials.Length];
             for (int j = 0; j < newMaterials.Length; j++)
             {
